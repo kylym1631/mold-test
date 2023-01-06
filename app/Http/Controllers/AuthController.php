@@ -75,7 +75,7 @@ class AuthController extends Controller
                 $fc = 3 - $user->password_fails;
 
                 return Response::json(array(
-                    'success' => "false", 
+                    'success' => "false",
                     'error' => 'Не верный пароль. Осталось '. $fc . ($fc == 2 ? ' попытки.' : ' попытка.'),
                 ), 200);
             }

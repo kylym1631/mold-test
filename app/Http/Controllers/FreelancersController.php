@@ -232,7 +232,7 @@ class FreelancersController extends Controller
             'recordsFiltered' => $filtered_count,
         ), 200);
     }
-
+    // было бы лучше создать свой контроллер для JSON
     private function prepareGetJsonRequest($fl_status, $search)
     {
         $users = User::where('activation', 1);

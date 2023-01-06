@@ -49,99 +49,6 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/set-locale/{lang}', function (UserOptionsService $user_opt) {
-    $user_opt->setLanguage(auth()->user()->id, request('lang'));
-    return Redirect::to(request()->headers->get('referer'));
-})
-    ->middleware('auth');
-
-Route::get('/', [AuthController::class, 'getMain'])
-    ->middleware('auth');
-
-Route::get('/dashboard', function () {
-    if (Auth::user()->group_id == 1) {
-        return Redirect::to('users');
-    }
-    if (Auth::user()->group_id == 2) {
-        return Redirect::to('/tasks');
-    }
-    if (Auth::user()->group_id == 3) {
-        return Redirect::to('tasks');
-    }
-    if (Auth::user()->group_id == 4) {
-        return Redirect::to('tasks');
-    }
-    if (Auth::user()->group_id == 5) {
-        return Redirect::to('/tasks');
-    }
-    if (Auth::user()->isCoordinator()) {
-        return Redirect::to('tasks');
-    }
-    if (Auth::user()->group_id == 7) {
-        return Redirect::to('/tasks');
-    }
-    if (Auth::user()->group_id == 8) {
-        return Redirect::to('/tasks');
-    }
-    if (Auth::user()->group_id == 9) {
-        return Redirect::to('users');
-    }
-    if (Auth::user()->group_id == 11) {
-        return Redirect::to('leads');
-    }
-    if (Auth::user()->group_id == 12) {
-        return Redirect::to('/tasks');
-    }
-    if (Auth::user()->group_id == 13) {
-        return Redirect::to('/housing');
-    }
-    if (Auth::user()->group_id == 14) {
-        return Redirect::to('/vacancies');
-    }
-    if (Auth::user()->group_id > 99) {
-        if (Auth::user()->hasPermission(['user', 'user.view'])) {
-            return Redirect::to('/users');
-        }
-        if (Auth::user()->hasPermission(['vacancy', 'vacancy.view'])) {
-            return Redirect::to('/vacancies');
-        }
-        if (Auth::user()->hasPermission(['freelancer', 'freelancer.view'])) {
-            return Redirect::to('/freelancers');
-        }
-        if (Auth::user()->hasPermission(['candidate', 'candidate.view'])) {
-            return Redirect::to('/candidates');
-        }
-        if (Auth::user()->hasPermission(['client', 'client.view'])) {
-            return Redirect::to('/clients');
-        }
-        if (Auth::user()->hasPermission(['lead', 'lead.view'])) {
-            return Redirect::to('/leads');
-        }
-        if (Auth::user()->hasPermission(['statistics', 'statistics.view'])) {
-            return Redirect::to('/statistics');
-        }
-        if (Auth::user()->hasPermission(['housing', 'housing.view'])) {
-            return Redirect::to('/housing');
-        }
-        if (Auth::user()->hasPermission(['cars', 'cars.view'])) {
-            return Redirect::to('/cars');
-        }
-        if (Auth::user()->hasPermission(['handbook', 'handbook.view'])) {
-            return Redirect::to('/handbooks');
-        }
-        if (Auth::user()->hasPermission(['firm', 'firm.view'])) {
-            return Redirect::to('/accountant/profile');
-        }
-        if (Auth::user()->hasPermission(['templates', 'templates.view'])) {
-            return Redirect::to('/templates');
-        }
-        if (Auth::user()->hasPermission(['transportations', 'transportations.view'])) {
-            return Redirect::to('/transportations');
-        }
-    }
-})
-    ->middleware('auth');
-
 Route::get('login', [AuthController::class, 'getLogin'])->name("login");
 Route::post('login', [AuthController::class, 'postLogin']);
 Route::get('logout', [AuthController::class, 'getLogout']);
@@ -155,6 +62,70 @@ Route::get('/user/invite/{id}', [FreelancersController::class, 'getInvite']);
 Route::post('/freelancer/portal/add', [FreelancersController::class, 'getInviteAdd']);
 
 Route::group(['middleware' => 'auth'], function () {
+    // group middleware
+
+    Route::get('/set-locale/{lang}', function (UserOptionsService $user_opt) {
+        $user_opt->setLanguage(auth()->user()->id, request('lang'));
+        return Redirect::to(request()->headers->get('referer'));
+    });
+    Route::get('/', [AuthController::class, 'getMain'])
+        ->middleware('auth');
+
+    Route::get('/dashboard', function () {
+        // make it cleaner
+        Route::get('/dashboard', function () {
+            $redirects = [
+                1 => 'users',
+                2 => '/tasks',
+                3 => 'tasks',
+                4 => 'tasks',
+                5 => '/tasks',
+                7 => '/tasks',
+                8 => '/tasks',
+                9 => 'users',
+                11 => 'leads',
+                12 => '/tasks',
+                13 => '/housing',
+                14 => '/vacancies',
+            ];
+
+            if (Auth::user()->isCoordinator()) {
+                return Redirect::to('tasks');
+            }
+
+            if (Auth::user()->group_id > 99) {
+                $permissions = [
+                    'user.view' => '/users',
+                    'vacancy.view' => '/vacancies',
+                    'freelancer.view' => '/freelancers',
+                    'candidate.view' => '/candidates',
+                    'client.view' => '/clients',
+                    'lead.view' => '/leads',
+                    'statistics.view' => '/statistics',
+                    'housing.view' => '/housing',
+                    'cars.view' => '/cars',
+                    'handbook.view' => '/handbooks',
+                    'firm.view' => '/accountant/profile',
+                    'templates.view' => '/templates',
+                    'transportations.view' => '/transportations',
+                ];
+
+                foreach ($permissions as $permission => $url) {
+                    if (Auth::user()->hasPermission([$permission])) {
+                        return Redirect::to($url);
+                    }
+                }
+            } elseif (isset($redirects[Auth::user()->group_id])) {
+                return Redirect::to($redirects[Auth::user()->group_id]);
+            }
+        });
+    });
+
+
+
+
+
+
     Route::get('/a/id', [AuthController::class, 'postAuthById']);
 
     Route::controller(UsersController::class)->group(function () {
@@ -190,6 +161,9 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/users/recruiters-rating', 'getRecruitersRatingJson')
             ->middleware('roles:2');
     });
+
+    // слишком длинный, лучше разделить их
+    // Пр. require(app_path() . '/routes/freelancers.php');
 
     // freelancers
     Route::get('freelancers', [FreelancersController::class, 'getIndex'])
@@ -236,7 +210,8 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('vacancy/count_women', 'vacancyCountwomen');
             Route::get('vacancy/count_men', 'vacancyCountmen');
         });
-
+        // Почему в одних нижний пробел, а в других дефис,
+        // если логика такая то ок, а если нет лучше именовать надо одинаково
         Route::get('vacancy/check-filling', 'checkFilling');
         Route::get('vacancy/check-nacionality', 'checkNacionality');
     });
@@ -319,6 +294,8 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('getJson', 'getJson')->name('leads.json')->middleware('roles:1|lead|lead.view');
         Route::get('ajax/id/{id}', 'getLeadAjax')->middleware('roles:1|2|3|4|5|6|9|11|lead|lead.view');
         Route::post('details/store', 'storeDetails')->middleware('roles:1|2|3|4|5|6|9|11|lead|lead.view');
+
+        // здесь тоже надо групировать
         Route::get('force-import', 'forceImport')->middleware('roles:1|lead.import');
         Route::get('reset', 'reset')->middleware('roles:1|lead.import');
         Route::get('import', 'importIndex')->middleware('roles:1|lead.import');

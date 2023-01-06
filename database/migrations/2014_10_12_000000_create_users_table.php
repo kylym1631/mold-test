@@ -23,6 +23,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password')->nullable();
             $table->integer('password_fails')->nullable()->default(0);
+
+            //  в БД не нашел таблицу groups, я бы переименовал group_id. Нап. group_type
+            // лучше придерживаться принципов
             $table->integer('group_id')->nullable();
             $table->integer('activation')->nullable();
             $table->integer('fl_status')->nullable();
